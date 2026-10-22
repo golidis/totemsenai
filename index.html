@@ -2,36 +2,50 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Totem SEDUC</title>
+    <title>Totem SENAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transition: background-color 0.5s, color 0.5s; }
+        
+        /* Tema Claro */
+        .tema-claro { background-color: #f3f4f6; color: #1f2937; }
+        .tema-claro .bg-tabela { background-color: #ffffff; }
+        .tema-claro .linha-impar { background-color: #f9fafb; }
+        .tema-claro .texto-secundario { color: #4b5563; }
+        .tema-claro .border-header { border-bottom: 4px solid #E3000F; }
+
+        /* Tema Escuro */
+        .tema-escuro { background-color: #111827; color: #f3f4f6; }
+        .tema-escuro .bg-tabela { background-color: #1f2937; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .tema-escuro .linha-impar { background-color: #374151; }
+        .tema-escuro .texto-secundario { color: #d1d5db; }
+        .tema-escuro .border-header { border-bottom: 4px solid #f87171; }
+        .tema-escuro .bg-gray-800 { background-color: #0f172a; }
+
         .bg-senai { background-color: #005CAA; }
         .text-senai { color: #005CAA; }
-        .border-red-senai { border-color: #E3000F; }
         
-        .pulse-dot {
-            height: 12px; width: 12px; background-color: #10B981; border-radius: 50%;
-            display: inline-block; margin-right: 8px; box-shadow: 0 0 8px #10B981;
-            animation: pulse 2s infinite;
-        }
+        .pulse-dot { height: 12px; width: 12px; background-color: #10B981; border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 8px #10B981; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         
         .linha-aula { animation: slideIn 0.5s ease-out forwards; opacity: 0; transform: translateY(10px); }
         @keyframes slideIn { to { opacity: 1; transform: translateY(0); } }
 
-        /* Estilos das bolinhas de paginação */
         .dots-container { display: flex; justify-content: center; gap: 10px; margin-top: 16px; margin-bottom: 8px; }
         .dot { width: 14px; height: 14px; border-radius: 50%; background-color: #cbd5e1; transition: all 0.3s ease; }
         .dot.active { background-color: #005CAA; transform: scale(1.3); }
+
+        /* Letreiro do Rodapé */
+        .rodape-container { background-color: #E3000F; color: white; overflow: hidden; white-space: nowrap; padding: 10px 0; font-size: 1.25rem; font-weight: bold; }
+        .rodape-texto { display: inline-block; padding-left: 100%; animation: letreiro 25s linear infinite; }
+        @keyframes letreiro { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style>
 </head>
-<body class="h-screen w-screen overflow-hidden flex flex-col">
-    <!-- Cabeçalho -->
-    <header class="bg-senai text-white p-6 flex justify-between items-center shadow-lg">
+<body id="corpo-pagina" class="h-screen w-screen overflow-hidden flex flex-col tema-claro">
+    <header class="bg-senai text-white p-6 flex justify-between items-center shadow-lg z-10">
         <div class="flex items-center gap-4">
             <div class="text-4xl font-black tracking-wider">SENAI</div>
-            <div class="text-2xl font-light border-l-2 pl-4 border-white">Cronograma de Aulas - SENAI Fernando Bezerra</div>
+            <div id="cabecalho-texto" class="text-2xl font-light border-l-2 pl-4 border-white">Cronograma de Aulas</div>
         </div>
         <div class="text-right flex flex-col items-end">
             <div id="relogio" class="text-4xl font-bold tracking-wider">00:00:00</div>
@@ -39,16 +53,15 @@
         </div>
     </header>
 
-    <!-- Conteúdo Central -->
-    <main class="flex-1 p-8 flex flex-col">
-        <div class="flex justify-between items-end mb-4 border-b-4 border-red-senai pb-2">
-            <h2 id="dia-semana-titulo" class="text-4xl font-bold text-senai tracking-tight">AULAS DE HOJE</h2>
-            <div class="flex items-center text-sm font-semibold text-gray-500">
-                <span class="pulse-dot"></span> Sincronizado ao vivo
+    <main class="flex-1 p-8 flex flex-col overflow-hidden">
+        <div class="flex justify-between items-end mb-4 border-header pb-2">
+            <h2 id="dia-semana-titulo" class="text-4xl font-bold tracking-tight">AULAS DE HOJE</h2>
+            <div class="flex items-center text-sm font-semibold">
+                <span class="pulse-dot"></span> <span id="status-sync">Sincronizado ao vivo</span>
             </div>
         </div>
         
-        <div class="bg-white rounded-xl shadow-2xl flex-1 flex flex-col overflow-hidden">
+        <div class="bg-tabela rounded-xl shadow-2xl flex-1 flex flex-col overflow-hidden">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-800 text-white text-xl uppercase tracking-wider">
@@ -56,31 +69,30 @@
                         <th class="p-4 w-1/4">Curso (Série)</th>
                         <th class="p-4 w-1/6">Instrutor(a)</th>
                         <th class="p-4 w-1/6">Ambiente</th>
-                        <th class="p-4 text-center w-24">Início</th> <!-- NOVA COLUNA -->
+                        <th class="p-4 text-center w-24">Início</th>
                         <th class="p-4 text-center w-24">Lanche</th>
                         <th class="p-4 text-center w-24 pr-6">Saída</th>
                     </tr>
                 </thead>
-                <tbody id="tabela-corpo" class="text-xl">
-                    <!-- Linhas preenchidas pelo robô automaticamente -->
-                </tbody>
+                <tbody id="tabela-corpo" class="text-xl"></tbody>
             </table>
-            <!-- Contêiner das bolinhas de paginação no final da tabela -->
             <div id="paginacao" class="dots-container mt-auto pb-4"></div>
         </div>
     </main>
 
+    <!-- Rodapé Animado -->
+    <div id="rodape-area" class="rodape-container hidden">
+        <div id="rodape-texto" class="rodape-texto"></div>
+    </div>
+
     <script>
         // ======= COLE SUA NOVA URL NA LINHA ABAIXO =======
-        const API_URL = "https://script.google.com/macros/s/AKfycbykaOhK6tIU7mdMYSU-IVCu4BLHJYiepmuC7_z6ApxCMC1qtjJkBIBy7TJ_o4V82puMcg/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbwlrpIjUuxIdQcwtRq7sEZNcUAL3NRZIPOvtwWZkqhphHMlZZ_ZAfRobq7VEoraAmjJSg/exec"; 
         // =================================================
 
         const diasDaSemana = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
         let dadosCompletos = {};
-
-        // === CONFIGURAÇÕES DA PÁGINA ===
-        const LINHAS_POR_PAGINA = 8;        // Quantidade de turmas por tela
-        const TEMPO_POR_PAGINA_MS = 10000;  // 10000 = 10 segundos por tela
+        let configAtual = {};
         let paginaAtual = 1;
         let totalPaginas = 1;
         let timerPaginacao;
@@ -88,8 +100,7 @@
         function atualizarRelogio() {
             const agora = new Date();
             document.getElementById('relogio').innerText = agora.toLocaleTimeString('pt-BR');
-            const opcoesData = { weekday: 'long', day: '2-digit', month: 'long' };
-            document.getElementById('data-atual').innerText = agora.toLocaleDateString('pt-BR', opcoesData);
+            document.getElementById('data-atual').innerText = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
         }
 
         async function buscarDados() {
@@ -97,64 +108,130 @@
             try {
                 const resposta = await fetch(API_URL);
                 dadosCompletos = await resposta.json();
-                paginaAtual = 1; // Reseta para a primeira página quando baixar dados novos
+                configAtual = dadosCompletos.configuracoes || {};
+                paginaAtual = 1; 
+                aplicarConfiguracoes();
                 renderizarTabela();
             } catch (erro) {
-                console.error("Erro ao sincronizar com a planilha:", erro);
+                console.error("Erro na sincronização:", erro);
             }
+        }
+
+        function aplicarConfiguracoes() {
+            // 1. Tema (Claro / Escuro)
+            const corpo = document.getElementById('corpo-pagina');
+            if (configAtual.modoTela === "ESCURO") {
+                corpo.classList.remove('tema-claro');
+                corpo.classList.add('tema-escuro');
+            } else {
+                corpo.classList.remove('tema-escuro');
+                corpo.classList.add('tema-claro');
+            }
+
+            // 2. Rodapé
+            const areaRodape = document.getElementById('rodape-area');
+            const textoRodape = document.getElementById('rodape-texto');
+            if (configAtual.mensagemRodape && configAtual.mensagemRodape.trim() !== "") {
+                textoRodape.innerText = configAtual.mensagemRodape;
+                areaRodape.classList.remove('hidden');
+            } else {
+                areaRodape.classList.add('hidden');
+            }
+        }
+
+        function converterParaMinutos(horarioStr) {
+            if (!horarioStr || horarioStr === "-") return 0;
+            let limpo = horarioStr.toLowerCase().replace('h', ':').trim();
+            let partes = limpo.split(':');
+            let h = parseInt(partes[0]) || 0;
+            let m = parseInt(partes[1]) || 0;
+            return (h * 60) + m;
+        }
+
+        function filtrarAulas(aulas) {
+            return aulas.filter(aula => {
+                // Filtro Instituição (SEDUC também é SENAI)
+                let instFiltro = configAtual.filtroInstituicao || "MOSTRAR TUDO";
+                let instAula = aula.instituicao.toUpperCase();
+                
+                let passouInstituicao = true;
+                if (instFiltro === "SENAI") {
+                    passouInstituicao = (instAula === "SENAI" || instAula === "SEDUC");
+                } else if (instFiltro !== "MOSTRAR TUDO") {
+                    passouInstituicao = (instAula === instFiltro);
+                }
+
+                // Filtro Turno
+                let turnoFiltro = configAtual.filtroTurno || "MOSTRAR TUDO";
+                let minutos = converterParaMinutos(aula.inicio);
+                let passouTurno = true;
+                
+                if (turnoFiltro === "MATUTINO") {
+                    passouTurno = (minutos >= 360 && minutos <= 750); // 06:00 as 12:30
+                } else if (turnoFiltro === "VESPERTINO") {
+                    passouTurno = (minutos >= 780 && minutos <= 1070); // 13:00 as 17:50
+                } else if (turnoFiltro === "NOTURNO") {
+                    passouTurno = (minutos >= 1080 && minutos <= 1380); // 18:00 as 23:00
+                }
+
+                return passouInstituicao && passouTurno;
+            });
         }
 
         function renderizarTabela() {
             let hoje = new Date().getDay();
             if (hoje === 0 || hoje === 6) hoje = 1; 
-            
             const nomeDia = diasDaSemana[hoje];
-            const aulas = dadosCompletos[nomeDia] || [];
+            
+            let aulasBrutas = dadosCompletos[nomeDia] || [];
+            let aulas = filtrarAulas(aulasBrutas);
             
             const corpo = document.getElementById('tabela-corpo');
             const paginacao = document.getElementById('paginacao');
-            corpo.innerHTML = ""; 
-            paginacao.innerHTML = "";
+            corpo.innerHTML = ""; paginacao.innerHTML = "";
 
             if (aulas.length === 0) {
                 document.getElementById('dia-semana-titulo').innerText = `AULAS DE HOJE - ${nomeDia}`;
-                corpo.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500 text-2xl font-medium">Nenhuma aula encontrada para o dia de hoje.</td></tr>`;
+                corpo.innerHTML = `<tr><td colspan="7" class="p-8 text-center texto-secundario text-2xl font-medium">Nenhuma aula encontrada para os filtros atuais.</td></tr>`;
                 clearInterval(timerPaginacao);
                 return;
             }
 
-            // Calcula quantas páginas existem
-            totalPaginas = Math.ceil(aulas.length / LINHAS_POR_PAGINA);
+            let limitesPorTela = configAtual.turmasPorTela || 6;
+            let tempoTelaMs = (configAtual.tempoPorTela || 5) * 1000;
+            totalPaginas = Math.ceil(aulas.length / limitesPorTela);
             
-            if (totalPaginas > 1) {
-                document.getElementById('dia-semana-titulo').innerText = `AULAS DE HOJE - ${nomeDia} (Página ${paginaAtual}/${totalPaginas})`;
-            } else {
-                document.getElementById('dia-semana-titulo').innerText = `AULAS DE HOJE - ${nomeDia}`;
-            }
+            document.getElementById('dia-semana-titulo').innerText = totalPaginas > 1 ? 
+                `AULAS DE HOJE - ${nomeDia} (Página ${paginaAtual}/${totalPaginas})` : `AULAS DE HOJE - ${nomeDia}`;
 
-            // Recorta apenas os dados da página que estamos olhando agora
-            const indiceInicio = (paginaAtual - 1) * LINHAS_POR_PAGINA;
-            const indiceFim = indiceInicio + LINHAS_POR_PAGINA;
-            const aulasDaPagina = aulas.slice(indiceInicio, indiceFim);
+            const indiceInicio = (paginaAtual - 1) * limitesPorTela;
+            const aulasDaPagina = aulas.slice(indiceInicio, indiceInicio + limitesPorTela);
 
             aulasDaPagina.forEach((aula, index) => {
                 const tr = document.createElement('tr');
-                tr.className = `border-b border-gray-200 linha-aula ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`;
+                tr.className = `border-b border-gray-400 linha-aula ${index % 2 === 0 ? 'linha-impar' : 'bg-transparent'}`;
                 tr.style.animationDelay = `${index * 0.05}s`;
 
+                // Badge de Instituição Colorido
+                let badgeCor = "bg-gray-500";
+                if(aula.instituicao === "SENAI") badgeCor = "bg-blue-600";
+                if(aula.instituicao === "SESI") badgeCor = "bg-red-600";
+                if(aula.instituicao === "SEDUC") badgeCor = "bg-green-600";
+                
+                let badge = aula.instituicao ? `<span class="text-xs text-white px-2 py-1 rounded ml-2 font-bold ${badgeCor}">${aula.instituicao}</span>` : "";
+
                 tr.innerHTML = `
-                    <td class="p-4 pl-6 font-bold text-gray-800">${aula.escola}</td>
-                    <td class="p-4"><span class="text-senai font-bold">${aula.curso}</span> <span class="text-sm bg-gray-200 text-gray-700 px-2 py-1 rounded ml-2 font-bold">${aula.serie}</span></td>
+                    <td class="p-4 pl-6 font-bold">${aula.escola}</td>
+                    <td class="p-4"><span class="font-bold" style="color: #005CAA;">${aula.curso}</span> <span class="text-sm bg-gray-300 text-gray-800 px-2 py-1 rounded ml-2 font-bold">${aula.serie}</span> ${badge}</td>
                     <td class="p-4 font-medium uppercase text-sm">${aula.instrutor}</td>
-                    <td class="p-4 font-medium text-gray-700 text-sm">${aula.ambiente}</td>
-                    <td class="p-4 text-center font-bold text-blue-600">${aula.inicio}</td>
-                    <td class="p-4 text-center font-bold text-green-600">${aula.lanche}</td>
-                    <td class="p-4 text-center font-bold text-red-600 pr-6">${aula.saida}</td>
+                    <td class="p-4 font-medium texto-secundario text-sm">${aula.ambiente}</td>
+                    <td class="p-4 text-center font-bold text-blue-500">${aula.inicio}</td>
+                    <td class="p-4 text-center font-bold text-green-500">${aula.lanche}</td>
+                    <td class="p-4 text-center font-bold text-red-500 pr-6">${aula.saida}</td>
                 `;
                 corpo.appendChild(tr);
             });
 
-            // Cria as bolinhas de paginação na parte de baixo da tela
             if (totalPaginas > 1) {
                 for (let i = 1; i <= totalPaginas; i++) {
                     const bolinha = document.createElement('div');
@@ -163,38 +240,25 @@
                 }
             }
 
-            // Reinicia o cronômetro para mudar de página
             clearInterval(timerPaginacao);
             if (totalPaginas > 1) {
-                timerPaginacao = setInterval(mudarPagina, TEMPO_POR_PAGINA_MS);
+                timerPaginacao = setInterval(mudarPagina, tempoTelaMs);
             }
         }
 
         function mudarPagina() {
-            paginaAtual++;
-            if (paginaAtual > totalPaginas) {
-                paginaAtual = 1; // Volta para a primeira tela
-            }
+            paginaAtual = paginaAtual >= totalPaginas ? 1 : paginaAtual + 1;
             renderizarTabela();
         }
 
-        // Relógio roda a cada segundo
         setInterval(atualizarRelogio, 1000);
         atualizarRelogio();
 
-        // O robô de buscas: de 5 em 5 minutos
         if (API_URL.startsWith("http")) {
             buscarDados();
-            setInterval(buscarDados, 300000); 
-            
-            // Checa à meia-noite se o dia virou
-            setInterval(() => {
-                const h = new Date().getHours();
-                const m = new Date().getMinutes();
-                if (h === 0 && m === 0) buscarDados();
-            }, 60000);
+            setInterval(buscarDados, 300000); // Checa a planilha a cada 5 min
         } else {
-            document.getElementById('tabela-corpo').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-600 text-2xl font-bold">⚠️ Atenção: Não esqueça de colar a nova URL do Apps Script dentro do arquivo HTML!</td></tr>`;
+            document.getElementById('tabela-corpo').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-600 text-2xl font-bold">⚠️ Atenção: Não esqueça de colar a nova URL do Apps Script!</td></tr>`;
         }
     </script>
 </body>
