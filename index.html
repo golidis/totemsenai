@@ -67,7 +67,7 @@
         <div class="flex justify-between items-end mb-4 border-header pb-2">
             <h2 id="dia-semana-titulo" class="text-4xl font-bold tracking-tight">AULAS DE HOJE</h2>
             <div class="flex items-center text-sm font-semibold">
-                <span class="pulse-dot"></span> <span id="status-sync">Sincronizado ao vivo</span>
+                <span class="pulse-dot" id="dot-sync"></span> <span id="status-sync">Sincronizado ao vivo</span>
             </div>
         </div>
         
@@ -97,7 +97,7 @@
 
     <script>
         // ======= COLE SUA NOVA URL NA LINHA ABAIXO =======
-        const API_URL = "https://script.google.com/macros/s/AKfycbyAqC1z11dgOVW9scgGd8FBPMj7bZfdVx26DbbgiwuA74sCOgY0VOf8aeDRA0R0UaEvAg/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbwGrZn8fEEbekPtAolW2pwA_GrtQM_g4nmOClnWqJbla7VEgPPaweW7M_QY2HQ2fqqH1A/exec"; 
         // =================================================
 
         const diasDaSemana = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
@@ -187,8 +187,24 @@
         function renderizarTabela() {
             let hoje = new Date().getDay();
             if (hoje === 0 || hoje === 6) hoje = 1; 
-            const nomeDia = diasDaSemana[hoje];
+            let nomeDia = diasDaSemana[hoje];
             
+            // --- NOVA LÓGICA DO MODO DE TESTE ---
+            const statusSync = document.getElementById('status-sync');
+            const dotSync = document.getElementById('dot-sync');
+            
+            if (configAtual.modoTeste && configAtual.modoTeste !== "DESLIGADO" && configAtual.modoTeste !== "") {
+                nomeDia = configAtual.modoTeste; 
+                statusSync.innerHTML = `<span style="color: #F59E0B; font-weight: 800;">⚠️ MODO TESTE (${nomeDia})</span>`;
+                dotSync.style.backgroundColor = "#F59E0B"; 
+                dotSync.style.boxShadow = "0 0 8px #F59E0B";
+            } else {
+                statusSync.innerHTML = "Sincronizado ao vivo";
+                dotSync.style.backgroundColor = "#10B981"; 
+                dotSync.style.boxShadow = "0 0 8px #10B981";
+            }
+            // ------------------------------------
+
             let aulasBrutas = dadosCompletos[nomeDia] || [];
             let aulas = filtrarAulas(aulasBrutas);
             
