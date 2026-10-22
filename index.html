@@ -15,6 +15,7 @@
         .tema-claro .border-header { border-bottom: 4px solid #E3000F; }
 
         /* Tema Escuro */
+        .tema-escuro .text-senai { color: #60A5FA; }
         .tema-escuro { background-color: #111827; color: #f3f4f6; }
         .tema-escuro .bg-tabela { background-color: #1f2937; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .tema-escuro .linha-impar { background-color: #374151; }
@@ -219,7 +220,7 @@
 
                 tr.innerHTML = `
                     <td class="p-4 pl-6 font-bold">${aula.escola}</td>
-                    <td class="p-4"><span class="font-bold" style="color: #005CAA;">${aula.curso}</span> <span class="text-sm bg-gray-300 text-gray-800 px-2 py-1 rounded ml-2 font-bold">${aula.serie}</span></td>
+                    <td class="p-4"><span class="font-bold text-senai">${aula.curso}</span> <span class="text-sm bg-gray-300 text-gray-800 px-2 py-1 rounded ml-2 font-bold">${aula.serie}</span></td>
                     <td class="p-4 font-medium uppercase text-sm">${aula.instrutor}</td>
                     <td class="p-4 font-medium texto-secundario text-sm">${aula.ambiente}</td>
                     <td class="p-4 text-center font-bold text-blue-500">${aula.inicio}</td>
