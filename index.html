@@ -212,18 +212,17 @@
                 tr.className = `border-b border-gray-400 linha-aula ${index % 2 === 0 ? 'linha-impar' : 'bg-transparent'}`;
                 tr.style.animationDelay = `${index * 0.05}s`;
 
-                // Badge de Instituição Colorido
-                let badgeCor = "bg-gray-500";
-                if(aula.instituicao === "SENAI") badgeCor = "bg-blue-600";
-                if(aula.instituicao === "SESI") badgeCor = "bg-red-600";
-                if(aula.instituicao === "SEDUC") badgeCor = "bg-green-600";
-                
-                let badge = aula.instituicao ? `<span class="text-xs text-white px-2 py-1 rounded ml-2 font-bold ${badgeCor}">${aula.instituicao}</span>` : "";
-
                 tr.innerHTML = `
                     <td class="p-4 pl-6 font-bold">${aula.escola}</td>
-                    <td class="p-4"><span class="font-bold" style="color: #005CAA;">${aula.curso}</span> <span class="text-sm bg-gray-300 text-gray-800 px-2 py-1 rounded ml-2 font-bold">${aula.serie}</span> ${badge}</td>
+                    <td class="p-4"><span class="font-bold" style="color: #005CAA;">${aula.curso}</span> <span class="text-sm bg-gray-300 text-gray-800 px-2 py-1 rounded ml-2 font-bold">${aula.serie}</span></td>
                     <td class="p-4 font-medium uppercase text-sm">${aula.instrutor}</td>
+                    <td class="p-4 font-medium texto-secundario text-sm">${aula.ambiente}</td>
+                    <td class="p-4 text-center font-bold text-blue-500">${aula.inicio}</td>
+                    <td class="p-4 text-center font-bold text-green-500">${aula.lanche}</td>
+                    <td class="p-4 text-center font-bold text-red-500 pr-6">${aula.saida}</td>
+                `;
+                corpo.appendChild(tr);
+            });                    <td class="p-4 font-medium uppercase text-sm">${aula.instrutor}</td>
                     <td class="p-4 font-medium texto-secundario text-sm">${aula.ambiente}</td>
                     <td class="p-4 text-center font-bold text-blue-500">${aula.inicio}</td>
                     <td class="p-4 text-center font-bold text-green-500">${aula.lanche}</td>
