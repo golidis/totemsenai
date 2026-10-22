@@ -87,7 +87,7 @@
 
     <script>
         // ======= COLE SUA NOVA URL NA LINHA ABAIXO =======
-        const API_URL = "https://script.google.com/macros/s/AKfycbwlrpIjUuxIdQcwtRq7sEZNcUAL3NRZIPOvtwWZkqhphHMlZZ_ZAfRobq7VEoraAmjJSg/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbxtoOKMuMLaidILI7cqsiLG-FT0kwYB4s5VKXtU6Ez6FGyL3nWFrOgnZLb6x59jBDX3Wg/exec"; 
         // =================================================
 
         const diasDaSemana = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
@@ -150,14 +150,14 @@
 
         function filtrarAulas(aulas) {
             return aulas.filter(aula => {
-                // Filtro Instituição (SEDUC também é SENAI)
+                // Filtro Instituição (SEDUC também é SENAI) + Permite palavra "TODOS"
                 let instFiltro = configAtual.filtroInstituicao || "MOSTRAR TUDO";
                 let instAula = aula.instituicao.toUpperCase();
                 
                 let passouInstituicao = true;
                 if (instFiltro === "SENAI") {
                     passouInstituicao = (instAula === "SENAI" || instAula === "SEDUC");
-                } else if (instFiltro !== "MOSTRAR TUDO") {
+                } else if (instFiltro !== "MOSTRAR TUDO" && instFiltro !== "TODOS") {
                     passouInstituicao = (instAula === instFiltro);
                 }
 
@@ -216,13 +216,6 @@
                     <td class="p-4 pl-6 font-bold">${aula.escola}</td>
                     <td class="p-4"><span class="font-bold" style="color: #005CAA;">${aula.curso}</span> <span class="text-sm bg-gray-300 text-gray-800 px-2 py-1 rounded ml-2 font-bold">${aula.serie}</span></td>
                     <td class="p-4 font-medium uppercase text-sm">${aula.instrutor}</td>
-                    <td class="p-4 font-medium texto-secundario text-sm">${aula.ambiente}</td>
-                    <td class="p-4 text-center font-bold text-blue-500">${aula.inicio}</td>
-                    <td class="p-4 text-center font-bold text-green-500">${aula.lanche}</td>
-                    <td class="p-4 text-center font-bold text-red-500 pr-6">${aula.saida}</td>
-                `;
-                corpo.appendChild(tr);
-            });                    <td class="p-4 font-medium uppercase text-sm">${aula.instrutor}</td>
                     <td class="p-4 font-medium texto-secundario text-sm">${aula.ambiente}</td>
                     <td class="p-4 text-center font-bold text-blue-500">${aula.inicio}</td>
                     <td class="p-4 text-center font-bold text-green-500">${aula.lanche}</td>
