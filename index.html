@@ -119,6 +119,17 @@
                 const resposta = await fetch(API_URL);
                 dadosCompletos = await resposta.json();
                 configAtual = dadosCompletos.configuracoes || {};
+                
+                // --- LÓGICA DO F5 REMOTO ---
+                const f5Remoto = configAtual.forcarF5 || "";
+                const ultimoF5 = localStorage.getItem("ultimoF5") || "";
+                if (f5Remoto !== "" && f5Remoto !== ultimoF5) {
+                    localStorage.setItem("ultimoF5", f5Remoto);
+                    window.location.reload(true); // Dá o F5 na tela
+                    return; 
+                }
+                // ---------------------------
+
                 paginaAtual = 1; 
                 aplicarConfiguracoes();
                 renderizarTabela();
