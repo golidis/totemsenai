@@ -169,15 +169,31 @@
                 }
 
                 let turnoFiltro = configAtual.filtroTurno || "MOSTRAR TUDO";
+                
+                // --- NOVA LÓGICA DO MODO AUTOMÁTICO ---
+                if (turnoFiltro === "AUTOMÁTICO" || turnoFiltro === "AUTOMATICO") {
+                    const agora = new Date();
+                    const minutosAtuais = (agora.getHours() * 60) + agora.getMinutes();
+                    
+                    if (minutosAtuais < 780) { // Antes das 13h00
+                        turnoFiltro = "MATUTINO";
+                    } else if (minutosAtuais < 1080) { // Entre 13h00 e 17h59
+                        turnoFiltro = "VESPERTINO";
+                    } else { // Depois das 18h00
+                        turnoFiltro = "NOTURNO";
+                    }
+                }
+                // --------------------------------------
+
                 let minutos = converterParaMinutos(aula.inicio);
                 let passouTurno = true;
                 
                 if (turnoFiltro === "MATUTINO") {
-                    passouTurno = (minutos >= 360 && minutos <= 750);
+                    passouTurno = (minutos >= 360 && minutos <= 750); // Aulas das 06:00 às 12:30
                 } else if (turnoFiltro === "VESPERTINO") {
-                    passouTurno = (minutos >= 780 && minutos <= 1070);
+                    passouTurno = (minutos >= 780 && minutos <= 1070); // Aulas das 13:00 às 17:50
                 } else if (turnoFiltro === "NOTURNO") {
-                    passouTurno = (minutos >= 1080 && minutos <= 1380);
+                    passouTurno = (minutos >= 1080 && minutos <= 1380); // Aulas das 18:00 às 23:00
                 }
 
                 return passouInstituicao && passouTurno;
