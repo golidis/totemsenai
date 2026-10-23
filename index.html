@@ -297,7 +297,7 @@
 
         if (API_URL.startsWith("http")) {
             buscarDados();
-            setInterval(buscarDados, 300000); 
+            setInterval(buscarDados, 6000); 
         } else {
             document.getElementById('tabela-corpo').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-600 text-2xl font-bold">⚠️ Atenção: Não esqueça de colar a nova URL do Apps Script!</td></tr>`;
         }
