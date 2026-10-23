@@ -36,7 +36,7 @@
         .dot { width: 14px; height: 14px; border-radius: 50%; background-color: #cbd5e1; transition: all 0.3s ease; }
         .dot.active { background-color: #005CAA; transform: scale(1.3); }
 
-        /* Letreiro do Rodapé (Atualizado para Azul, Maior e mais Largo) */
+        /* Letreiro do Rodapé */
         .rodape-container { 
             background-color: #005CAA; 
             color: white; 
@@ -52,11 +52,9 @@
     </style>
 </head>
 <body id="corpo-pagina" class="h-screen w-screen overflow-hidden flex flex-col tema-claro">
-<header class="bg-senai text-white p-6 flex justify-between items-center shadow-lg z-10">
+    <header class="bg-senai text-white p-6 flex justify-between items-center shadow-lg z-10">
         <div class="flex items-center gap-6">
-            <!-- A logo do GitHub entra aqui, substituindo o texto antigo -->
             <img src="SESISENAI.png" alt="Logo SESI SENAI" class="h-14 object-contain">
-            
             <div id="cabecalho-texto" class="text-2xl font-light border-l-2 pl-6 border-white">Rio Verde</div>
         </div>
         <div class="text-right flex flex-col items-end">
@@ -82,7 +80,7 @@
                         <th class="p-4 w-1/6">Instrutor(a)</th>
                         <th class="p-4 w-1/6">Ambiente</th>
                         <th class="p-4 text-center w-24">Início</th>
-                        <th class="p-4 text-center w-24">Intervalo</th>
+                        <th class="p-4 text-center w-24">Lanche</th>
                         <th class="p-4 text-center w-24 pr-6">Saída</th>
                     </tr>
                 </thead>
@@ -98,9 +96,9 @@
     </div>
 
     <script>
-        // ======= COLE SUA NOVA URL NA LINHA ABAIXO =======
-        const API_URL = "https://script.google.com/macros/s/AKfycbwGrZn8fEEbekPtAolW2pwA_GrtQM_g4nmOClnWqJbla7VEgPPaweW7M_QY2HQ2fqqH1A/exec"; 
-        // =================================================
+        // ======= URL OFICIAL DO SEU SCRIPT ========
+        const API_URL = "https://script.google.com/macros/s/AKfycbwmlqnDLniJgMey3NnhQFrBlhzo2me-FYNVCyp5lVpbesKJPlBh1JX_jqpGoQO-51Uqag/exec"; 
+        // ==========================================
 
         const diasDaSemana = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
         let dadosCompletos = {};
@@ -118,21 +116,23 @@
         async function buscarDados() {
             if(!API_URL.startsWith("http")) return;
             try {
-                const resposta = await fetch(API_URL);
+                // Truque para furar o cache do navegador da TV/PC:
+                const urlSemCache = API_URL + "?t=" + new Date().getTime(); 
+                
+                const resposta = await fetch(urlSemCache);
                 dadosCompletos = await resposta.json();
                 configAtual = dadosCompletos.configuracoes || {};
                 
                 // --- LÓGICA DO F5 REMOTO ---
-                const f5Remoto = configAtual.forcarF5 || "";
+                const f5Remoto = configAtual.forcarF5 ? configAtual.forcarF5.toString().trim() : "";
                 const ultimoF5 = localStorage.getItem("ultimoF5") || "";
+                
                 if (f5Remoto !== "" && f5Remoto !== ultimoF5) {
                     localStorage.setItem("ultimoF5", f5Remoto);
-                    window.location.reload(true); // Dá o F5 na tela
+                    window.location.reload(true); 
                     return; 
                 }
-                // ---------------------------
 
-                paginaAtual = 1; 
                 aplicarConfiguracoes();
                 renderizarTabela();
             } catch (erro) {
@@ -196,17 +196,16 @@
                         turnoFiltro = "NOTURNO";
                     }
                 }
-                // --------------------------------------
-
+                
                 let minutos = converterParaMinutos(aula.inicio);
                 let passouTurno = true;
                 
                 if (turnoFiltro === "MATUTINO") {
-                    passouTurno = (minutos >= 360 && minutos <= 750); // Aulas das 06:00 às 12:30
+                    passouTurno = (minutos >= 360 && minutos <= 750);
                 } else if (turnoFiltro === "VESPERTINO") {
-                    passouTurno = (minutos >= 780 && minutos <= 1070); // Aulas das 13:00 às 17:50
+                    passouTurno = (minutos >= 780 && minutos <= 1070);
                 } else if (turnoFiltro === "NOTURNO") {
-                    passouTurno = (minutos >= 1080 && minutos <= 1380); // Aulas das 18:00 às 23:00
+                    passouTurno = (minutos >= 1080 && minutos <= 1380);
                 }
 
                 return passouInstituicao && passouTurno;
@@ -218,12 +217,12 @@
             if (hoje === 0 || hoje === 6) hoje = 1; 
             let nomeDia = diasDaSemana[hoje];
             
-            // --- NOVA LÓGICA DO MODO DE TESTE ---
+            // Lógica do Modo de Teste
             const statusSync = document.getElementById('status-sync');
             const dotSync = document.getElementById('dot-sync');
             
             if (configAtual.modoTeste && configAtual.modoTeste !== "DESLIGADO" && configAtual.modoTeste !== "") {
-                nomeDia = configAtual.modoTeste; 
+                nomeDia = configAtual.modoTeste.toUpperCase(); 
                 statusSync.innerHTML = `<span style="color: #F59E0B; font-weight: 800;">⚠️ MODO TESTE (${nomeDia})</span>`;
                 dotSync.style.backgroundColor = "#F59E0B"; 
                 dotSync.style.boxShadow = "0 0 8px #F59E0B";
@@ -232,7 +231,6 @@
                 dotSync.style.backgroundColor = "#10B981"; 
                 dotSync.style.boxShadow = "0 0 8px #10B981";
             }
-            // ------------------------------------
 
             let aulasBrutas = dadosCompletos[nomeDia] || [];
             let aulas = filtrarAulas(aulasBrutas);
@@ -244,14 +242,19 @@
             if (aulas.length === 0) {
                 document.getElementById('dia-semana-titulo').innerText = `AULAS DE HOJE - ${nomeDia}`;
                 corpo.innerHTML = `<tr><td colspan="7" class="p-8 text-center texto-secundario text-2xl font-medium">Nenhuma aula encontrada para os filtros atuais.</td></tr>`;
-                clearInterval(timerPaginacao);
+                clearTimeout(timerPaginacao);
                 return;
             }
 
-            let limitesPorTela = configAtual.turmasPorTela || 6;
-            let tempoTelaMs = (configAtual.tempoPorTela || 5) * 1000;
+            let limitesPorTela = parseInt(configAtual.turmasPorTela) || 6;
+            let tempoTelaMs = parseInt(configAtual.tempoPorTela || 5) * 1000;
             totalPaginas = Math.ceil(aulas.length / limitesPorTela);
             
+            // Trava de segurança: se tivermos menos páginas do que a página atual
+            if (paginaAtual > totalPaginas) {
+                paginaAtual = 1;
+            }
+
             document.getElementById('dia-semana-titulo').innerText = totalPaginas > 1 ? 
                 `AULAS DE HOJE - ${nomeDia} (Página ${paginaAtual}/${totalPaginas})` : `AULAS DE HOJE - ${nomeDia}`;
 
@@ -283,9 +286,9 @@
                 }
             }
 
-            clearInterval(timerPaginacao);
+            clearTimeout(timerPaginacao);
             if (totalPaginas > 1) {
-                timerPaginacao = setInterval(mudarPagina, tempoTelaMs);
+                timerPaginacao = setTimeout(mudarPagina, tempoTelaMs);
             }
         }
 
@@ -299,9 +302,7 @@
 
         if (API_URL.startsWith("http")) {
             buscarDados();
-            setInterval(buscarDados, 6000); 
-        } else {
-            document.getElementById('tabela-corpo').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-600 text-2xl font-bold">⚠️ Atenção: Não esqueça de colar a nova URL do Apps Script!</td></tr>`;
+            setInterval(buscarDados, 60000); // Checa mudanças no Excel a cada 60s
         }
     </script>
 </body>
