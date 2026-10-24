@@ -212,9 +212,9 @@
             });
         }
 
-        function renderizarTabela() {
+function renderizarTabela() {
             let hoje = new Date().getDay();
-            if (hoje === 0 || hoje === 6) hoje = 1; 
+            if (hoje === 0) hoje = 1; 
             let nomeDia = diasDaSemana[hoje];
             
             // Lógica do Modo de Teste
