@@ -55,7 +55,7 @@
     <header class="bg-senai text-white p-6 flex justify-between items-center shadow-lg z-10">
         <div class="flex items-center gap-6">
             <img src="SESISENAI.png" alt="Logo SESI SENAI" class="h-14 object-contain">
-            <div id="cabecalho-texto" class="text-2xl font-light border-l-2 pl-6 border-white">Rio Verde</div>
+            <div class="text-2xl font-light border-l-2 pl-6 border-white">Rio Verde</div>
         </div>
         <div class="text-right flex flex-col items-end">
             <div id="relogio" class="text-4xl font-bold tracking-wider">00:00:00</div>
@@ -67,7 +67,7 @@
         <div class="flex justify-between items-end mb-4 border-header pb-2">
             <h2 id="dia-semana-titulo" class="text-4xl font-bold tracking-tight">AULAS DE HOJE</h2>
             <div class="flex items-center text-sm font-semibold">
-                <span class="pulse-dot" id="dot-sync"></span> <span id="status-sync">Sincronizado ao vivo</span>
+                <span class="pulse-dot" id="dot-sync"></span> <span id="status-sync">Sincronizado</span>
             </div>
         </div>
         
@@ -90,17 +90,31 @@
         </div>
     </main>
 
-    <!-- Rodapé Animado -->
     <div id="rodape-area" class="rodape-container hidden">
         <div id="rodape-texto" class="rodape-texto"></div>
     </div>
 
     <script>
-        // ======= URL OFICIAL DO SEU SCRIPT ========
+        // ======= COLE O NOVO LINK DO SCRIPT AQUI ========
         const API_URL = "https://script.google.com/macros/s/AKfycbzfUN_NmAWrHoFnRb_ooqXflq5hi7YIZgO1u00zl_bJviDwzfwlSrXo-P8vEwne3JggLQ/exec"; 
-        // ==========================================
+        // ================================================
 
         const diasDaSemana = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
+        
+        // Cache de Elementos DOM (Aumenta muito a velocidade na TV)
+        const DOM = {
+            corpoPagina: document.getElementById('corpo-pagina'),
+            relogio: document.getElementById('relogio'),
+            dataAtual: document.getElementById('data-atual'),
+            tituloDia: document.getElementById('dia-semana-titulo'),
+            statusSync: document.getElementById('status-sync'),
+            dotSync: document.getElementById('dot-sync'),
+            tabelaCorpo: document.getElementById('tabela-corpo'),
+            paginacao: document.getElementById('paginacao'),
+            areaRodape: document.getElementById('rodape-area'),
+            textoRodape: document.getElementById('rodape-texto')
+        };
+
         let dadosCompletos = {};
         let configAtual = {};
         let paginaAtual = 1;
@@ -109,24 +123,21 @@
 
         function atualizarRelogio() {
             const agora = new Date();
-            document.getElementById('relogio').innerText = agora.toLocaleTimeString('pt-BR');
-            document.getElementById('data-atual').innerText = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+            DOM.relogio.innerText = agora.toLocaleTimeString('pt-BR');
+            DOM.dataAtual.innerText = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
         }
 
         async function buscarDados() {
             if(!API_URL.startsWith("http")) return;
             try {
-                // Truque para furar o cache do navegador da TV/PC:
-                const urlSemCache = API_URL + "?t=" + new Date().getTime(); 
-                
+                const urlSemCache = `${API_URL}?t=${new Date().getTime()}`; 
                 const resposta = await fetch(urlSemCache);
                 dadosCompletos = await resposta.json();
                 configAtual = dadosCompletos.configuracoes || {};
                 
-                // --- LÓGICA DO F5 REMOTO ---
+                // Lógica de F5 Remoto
                 const f5Remoto = configAtual.forcarF5 ? configAtual.forcarF5.toString().trim() : "";
                 const ultimoF5 = localStorage.getItem("ultimoF5") || "";
-                
                 if (f5Remoto !== "" && f5Remoto !== ultimoF5) {
                     localStorage.setItem("ultimoF5", f5Remoto);
                     window.location.reload(true); 
@@ -141,132 +152,101 @@
         }
 
         function aplicarConfiguracoes() {
-            const corpo = document.getElementById('corpo-pagina');
-            if (configAtual.modoTela === "ESCURO") {
-                corpo.classList.remove('tema-claro');
-                corpo.classList.add('tema-escuro');
-            } else {
-                corpo.classList.remove('tema-escuro');
-                corpo.classList.add('tema-claro');
+            // Tema
+            const temaNovo = configAtual.modoTela === "ESCURO" ? 'tema-escuro' : 'tema-claro';
+            const temaAntigo = configAtual.modoTela === "ESCURO" ? 'tema-claro' : 'tema-escuro';
+            if (!DOM.corpoPagina.classList.contains(temaNovo)) {
+                DOM.corpoPagina.classList.remove(temaAntigo);
+                DOM.corpoPagina.classList.add(temaNovo);
             }
 
-            const areaRodape = document.getElementById('rodape-area');
-            const textoRodape = document.getElementById('rodape-texto');
+            // Rodapé
             if (configAtual.mensagemRodape && configAtual.mensagemRodape.trim() !== "") {
-                textoRodape.innerText = configAtual.mensagemRodape;
-                areaRodape.classList.remove('hidden');
+                if (DOM.textoRodape.innerText !== configAtual.mensagemRodape) {
+                    DOM.textoRodape.innerText = configAtual.mensagemRodape;
+                }
+                DOM.areaRodape.classList.remove('hidden');
             } else {
-                areaRodape.classList.add('hidden');
+                DOM.areaRodape.classList.add('hidden');
             }
         }
 
         function converterParaMinutos(horarioStr) {
             if (!horarioStr || horarioStr === "-") return 0;
-            let limpo = horarioStr.toLowerCase().replace('h', ':').trim();
-            let partes = limpo.split(':');
-            let h = parseInt(partes[0]) || 0;
-            let m = parseInt(partes[1]) || 0;
-            return (h * 60) + m;
+            const partes = horarioStr.toLowerCase().replace('h', ':').trim().split(':');
+            return (parseInt(partes[0]) || 0) * 60 + (parseInt(partes[1]) || 0);
         }
 
         function filtrarAulas(aulas) {
+            const instFiltro = configAtual.filtroInstituicao || "MOSTRAR TUDO";
+            let turnoFiltro = configAtual.filtroTurno || "MOSTRAR TUDO";
+            
+            if (turnoFiltro === "AUTOMÁTICO" || turnoFiltro === "AUTOMATICO") {
+                const agora = new Date();
+                const minAtuais = agora.getHours() * 60 + agora.getMinutes();
+                if (minAtuais < 780) turnoFiltro = "MATUTINO";
+                else if (minAtuais < 1080) turnoFiltro = "VESPERTINO";
+                else turnoFiltro = "NOTURNO";
+            }
+
             return aulas.filter(aula => {
-                let instFiltro = configAtual.filtroInstituicao || "MOSTRAR TUDO";
-                let instAula = aula.instituicao.toUpperCase();
-                
-                let passouInstituicao = true;
-                if (instFiltro === "SENAI") {
-                    passouInstituicao = (instAula === "SENAI" || instAula === "SEDUC");
-                } else if (instFiltro !== "MOSTRAR TUDO" && instFiltro !== "TODOS") {
-                    passouInstituicao = (instAula === instFiltro);
-                }
+                const instAula = aula.instituicao.toUpperCase();
+                let passouInst = (instFiltro === "MOSTRAR TUDO" || instFiltro === "TODOS" || instAula === instFiltro);
+                if (instFiltro === "SENAI") passouInst = (instAula === "SENAI" || instAula === "SEDUC");
 
-                let turnoFiltro = configAtual.filtroTurno || "MOSTRAR TUDO";
-                
-                // --- NOVA LÓGICA DO MODO AUTOMÁTICO ---
-                if (turnoFiltro === "AUTOMÁTICO" || turnoFiltro === "AUTOMATICO") {
-                    const agora = new Date();
-                    const minutosAtuais = (agora.getHours() * 60) + agora.getMinutes();
-                    
-                    if (minutosAtuais < 780) { // Antes das 13h00
-                        turnoFiltro = "MATUTINO";
-                    } else if (minutosAtuais < 1080) { // Entre 13h00 e 17h59
-                        turnoFiltro = "VESPERTINO";
-                    } else { // Depois das 18h00
-                        turnoFiltro = "NOTURNO";
-                    }
-                }
-                
-                let minutos = converterParaMinutos(aula.inicio);
+                const minAula = converterParaMinutos(aula.inicio);
                 let passouTurno = true;
-                
-                if (turnoFiltro === "MATUTINO") {
-                    passouTurno = (minutos >= 360 && minutos <= 750);
-                } else if (turnoFiltro === "VESPERTINO") {
-                    passouTurno = (minutos >= 780 && minutos <= 1070);
-                } else if (turnoFiltro === "NOTURNO") {
-                    passouTurno = (minutos >= 1080 && minutos <= 1380);
-                }
+                if (turnoFiltro === "MATUTINO") passouTurno = (minAula >= 360 && minAula <= 750);
+                else if (turnoFiltro === "VESPERTINO") passouTurno = (minAula >= 780 && minAula <= 1070);
+                else if (turnoFiltro === "NOTURNO") passouTurno = (minAula >= 1080 && minAula <= 1380);
 
-                return passouInstituicao && passouTurno;
+                return passouInst && passouTurno;
             });
         }
 
-function renderizarTabela() {
+        function renderizarTabela() {
             let hoje = new Date().getDay();
             if (hoje === 0) hoje = 1; 
             let nomeDia = diasDaSemana[hoje];
             
-            // Lógica do Modo de Teste
-            const statusSync = document.getElementById('status-sync');
-            const dotSync = document.getElementById('dot-sync');
-            
-            if (configAtual.modoTeste && configAtual.modoTeste !== "DESLIGADO" && configAtual.modoTeste !== "") {
+            // Modo Teste
+            if (configAtual.modoTeste && configAtual.modoTeste !== "DESLIGADO") {
                 nomeDia = configAtual.modoTeste.toUpperCase(); 
-                statusSync.innerHTML = `<span style="color: #F59E0B; font-weight: 800;">⚠️ MODO TESTE (${nomeDia})</span>`;
-                dotSync.style.backgroundColor = "#F59E0B"; 
-                dotSync.style.boxShadow = "0 0 8px #F59E0B";
+                DOM.statusSync.innerHTML = `<span style="color: #F59E0B; font-weight: 800;">⚠️ MODO TESTE (${nomeDia})</span>`;
+                DOM.dotSync.style.backgroundColor = "#F59E0B"; 
+                DOM.dotSync.style.boxShadow = "0 0 8px #F59E0B";
             } else {
-                statusSync.innerHTML = "Sincronizado ao vivo";
-                dotSync.style.backgroundColor = "#10B981"; 
-                dotSync.style.boxShadow = "0 0 8px #10B981";
+                DOM.statusSync.innerHTML = "Sincronizado ao vivo";
+                DOM.dotSync.style.backgroundColor = "#10B981"; 
+                DOM.dotSync.style.boxShadow = "0 0 8px #10B981";
             }
 
-            let aulasBrutas = dadosCompletos[nomeDia] || [];
-            let aulas = filtrarAulas(aulasBrutas);
-            
-            const corpo = document.getElementById('tabela-corpo');
-            const paginacao = document.getElementById('paginacao');
-            corpo.innerHTML = ""; paginacao.innerHTML = "";
+            const aulasBrutas = dadosCompletos[nomeDia] || [];
+            const aulas = filtrarAulas(aulasBrutas);
 
             if (aulas.length === 0) {
-                document.getElementById('dia-semana-titulo').innerText = `AULAS DE HOJE - ${nomeDia}`;
-                corpo.innerHTML = `<tr><td colspan="7" class="p-8 text-center texto-secundario text-2xl font-medium">Nenhuma aula encontrada para os filtros atuais.</td></tr>`;
+                DOM.tituloDia.innerText = `AULAS DE HOJE - ${nomeDia}`;
+                DOM.tabelaCorpo.innerHTML = `<tr><td colspan="7" class="p-8 text-center texto-secundario text-2xl font-medium">Nenhuma aula encontrada para os filtros atuais.</td></tr>`;
+                DOM.paginacao.innerHTML = "";
                 clearTimeout(timerPaginacao);
                 return;
             }
 
-            let limitesPorTela = parseInt(configAtual.turmasPorTela) || 6;
-            let tempoTelaMs = parseInt(configAtual.tempoPorTela || 5) * 1000;
+            const limitesPorTela = parseInt(configAtual.turmasPorTela) || 6;
+            const tempoTelaMs = (parseInt(configAtual.tempoPorTela) || 5) * 1000;
             totalPaginas = Math.ceil(aulas.length / limitesPorTela);
             
-            // Trava de segurança: se tivermos menos páginas do que a página atual
-            if (paginaAtual > totalPaginas) {
-                paginaAtual = 1;
-            }
+            if (paginaAtual > totalPaginas) paginaAtual = 1;
 
-            document.getElementById('dia-semana-titulo').innerText = totalPaginas > 1 ? 
+            DOM.tituloDia.innerText = totalPaginas > 1 ? 
                 `AULAS DE HOJE - ${nomeDia} (Página ${paginaAtual}/${totalPaginas})` : `AULAS DE HOJE - ${nomeDia}`;
 
             const indiceInicio = (paginaAtual - 1) * limitesPorTela;
             const aulasDaPagina = aulas.slice(indiceInicio, indiceInicio + limitesPorTela);
 
-            aulasDaPagina.forEach((aula, index) => {
-                const tr = document.createElement('tr');
-                tr.className = `border-b border-gray-400 linha-aula ${index % 2 === 0 ? 'linha-impar' : 'bg-transparent'}`;
-                tr.style.animationDelay = `${index * 0.05}s`;
-
-                tr.innerHTML = `
+            // Virtual DOM: Só desenha na tela se o código HTML gerado for diferente do atual
+            const novoHtmlCorpo = aulasDaPagina.map((aula, index) => `
+                <tr class="border-b border-gray-400 linha-aula ${index % 2 === 0 ? 'linha-impar' : 'bg-transparent'}" style="animation-delay: ${index * 0.05}s;">
                     <td class="p-4 pl-6 font-bold">${aula.escola}</td>
                     <td class="p-4"><span class="font-bold text-senai">${aula.curso}</span> <span class="text-sm bg-gray-300 text-gray-800 px-2 py-1 rounded ml-2 font-bold">${aula.serie}</span></td>
                     <td class="p-4 font-medium uppercase text-sm">${aula.instrutor}</td>
@@ -274,35 +254,40 @@ function renderizarTabela() {
                     <td class="p-4 text-center font-bold text-blue-500">${aula.inicio}</td>
                     <td class="p-4 text-center font-bold text-green-500">${aula.lanche}</td>
                     <td class="p-4 text-center font-bold text-red-500 pr-6">${aula.saida}</td>
-                `;
-                corpo.appendChild(tr);
-            });
+                </tr>`).join('');
 
+            // Otimização: A tela só pisca se a informação realmente mudou
+            if (DOM.tabelaCorpo.innerHTML !== novoHtmlCorpo) {
+                DOM.tabelaCorpo.innerHTML = novoHtmlCorpo;
+            }
+
+            // Renderiza bolinhas
+            let novoHtmlPaginacao = "";
             if (totalPaginas > 1) {
                 for (let i = 1; i <= totalPaginas; i++) {
-                    const bolinha = document.createElement('div');
-                    bolinha.className = `dot ${i === paginaAtual ? 'active' : ''}`;
-                    paginacao.appendChild(bolinha);
+                    novoHtmlPaginacao += `<div class="dot ${i === paginaAtual ? 'active' : ''}"></div>`;
                 }
+            }
+            if (DOM.paginacao.innerHTML !== novoHtmlPaginacao) {
+                DOM.paginacao.innerHTML = novoHtmlPaginacao;
             }
 
             clearTimeout(timerPaginacao);
             if (totalPaginas > 1) {
-                timerPaginacao = setTimeout(mudarPagina, tempoTelaMs);
+                timerPaginacao = setTimeout(() => {
+                    paginaAtual = paginaAtual >= totalPaginas ? 1 : paginaAtual + 1;
+                    renderizarTabela();
+                }, tempoTelaMs);
             }
         }
 
-        function mudarPagina() {
-            paginaAtual = paginaAtual >= totalPaginas ? 1 : paginaAtual + 1;
-            renderizarTabela();
-        }
-
+        // Inicialização
         setInterval(atualizarRelogio, 1000);
         atualizarRelogio();
 
         if (API_URL.startsWith("http")) {
             buscarDados();
-            setInterval(buscarDados, 60000); // Checa mudanças no Excel a cada 60s
+            setInterval(buscarDados, 60000); // Consulta silenciosa a cada 60s
         }
     </script>
 </body>
