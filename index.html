@@ -49,13 +49,24 @@
         }
         .rodape-texto { display: inline-block; padding-left: 100%; animation: letreiro 25s linear infinite; }
         @keyframes letreiro { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+        /* Estilo dinâmico para barra de rolagem no PC/Mobile */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body id="corpo-pagina" class="h-screen w-screen overflow-hidden flex flex-col tema-claro">
-    <header class="bg-senai text-white p-6 flex justify-between items-center shadow-lg z-10">
+    <header class="bg-senai text-white p-6 flex justify-between items-center shadow-lg z-10 shrink-0">
         <div class="flex items-center gap-6">
             <img src="SESISENAI.png" alt="Logo SESI SENAI" class="h-14 object-contain">
-            <div class="text-2xl font-light border-l-2 pl-6 border-white">Rio Verde</div>
+            <div class="text-2xl font-light border-l-2 pl-6 border-white flex items-center gap-6">
+                Rio Verde
+                <button id="btn-modo" onclick="alternarModo()" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-bold transition flex items-center gap-2 cursor-pointer border border-white/40">
+                    📋 Lista Completa
+                </button>
+            </div>
         </div>
         <div class="text-right flex flex-col items-end">
             <div id="relogio" class="text-4xl font-bold tracking-wider">00:00:00</div>
@@ -63,17 +74,17 @@
         </div>
     </header>
 
-    <main class="flex-1 p-8 flex flex-col overflow-hidden">
-        <div class="flex justify-between items-end mb-4 border-header pb-2">
+    <main class="flex-1 p-8 flex flex-col min-h-0">
+        <div class="flex justify-between items-end mb-4 border-header pb-2 shrink-0">
             <h2 id="dia-semana-titulo" class="text-4xl font-bold tracking-tight">AULAS DE HOJE</h2>
             <div class="flex items-center text-sm font-semibold">
                 <span class="pulse-dot" id="dot-sync"></span> <span id="status-sync">Sincronizado</span>
             </div>
         </div>
         
-        <div class="bg-tabela rounded-xl shadow-2xl flex-1 flex flex-col overflow-hidden">
+        <div id="container-tabela" class="bg-tabela rounded-xl shadow-2xl flex-1 flex flex-col overflow-hidden">
             <table class="w-full text-left border-collapse">
-                <thead>
+                <thead class="sticky top-0 z-10 shadow-md">
                     <tr class="bg-gray-800 text-white text-xl uppercase tracking-wider">
                         <th class="p-4 pl-6 w-1/5">Escola/Evento</th>
                         <th class="p-4 w-1/4">Curso (Série)</th>
@@ -86,22 +97,19 @@
                 </thead>
                 <tbody id="tabela-corpo" class="text-xl"></tbody>
             </table>
-            <div id="paginacao" class="dots-container mt-auto pb-4"></div>
+            <div id="paginacao" class="dots-container mt-auto pb-4 shrink-0"></div>
         </div>
     </main>
 
-    <div id="rodape-area" class="rodape-container hidden">
+    <div id="rodape-area" class="rodape-container hidden shrink-0">
         <div id="rodape-texto" class="rodape-texto"></div>
     </div>
 
     <script>
-        // ======= COLE O NOVO LINK DO SCRIPT AQUI ========
         const API_URL = "https://script.google.com/macros/s/AKfycbzfUN_NmAWrHoFnRb_ooqXflq5hi7YIZgO1u00zl_bJviDwzfwlSrXo-P8vEwne3JggLQ/exec"; 
-        // ================================================
 
         const diasDaSemana = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
         
-        // Cache de Elementos DOM (Aumenta muito a velocidade na TV)
         const DOM = {
             corpoPagina: document.getElementById('corpo-pagina'),
             relogio: document.getElementById('relogio'),
@@ -110,9 +118,11 @@
             statusSync: document.getElementById('status-sync'),
             dotSync: document.getElementById('dot-sync'),
             tabelaCorpo: document.getElementById('tabela-corpo'),
+            containerTabela: document.getElementById('container-tabela'),
             paginacao: document.getElementById('paginacao'),
             areaRodape: document.getElementById('rodape-area'),
-            textoRodape: document.getElementById('rodape-texto')
+            textoRodape: document.getElementById('rodape-texto'),
+            btnModo: document.getElementById('btn-modo')
         };
 
         let dadosCompletos = {};
@@ -120,11 +130,20 @@
         let paginaAtual = 1;
         let totalPaginas = 1;
         let timerPaginacao;
+        
+        // Verifica se o link foi acessado com "?lista" no final
+        let modoListaCompleta = new URLSearchParams(window.location.search).has('lista');
 
         function atualizarRelogio() {
             const agora = new Date();
             DOM.relogio.innerText = agora.toLocaleTimeString('pt-BR');
             DOM.dataAtual.innerText = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+        }
+
+        function alternarModo() {
+            modoListaCompleta = !modoListaCompleta;
+            paginaAtual = 1;
+            renderizarTabela();
         }
 
         async function buscarDados() {
@@ -135,7 +154,6 @@
                 dadosCompletos = await resposta.json();
                 configAtual = dadosCompletos.configuracoes || {};
                 
-                // Lógica de F5 Remoto
                 const f5Remoto = configAtual.forcarF5 ? configAtual.forcarF5.toString().trim() : "";
                 const ultimoF5 = localStorage.getItem("ultimoF5") || "";
                 if (f5Remoto !== "" && f5Remoto !== ultimoF5) {
@@ -152,7 +170,6 @@
         }
 
         function aplicarConfiguracoes() {
-            // Tema
             const temaNovo = configAtual.modoTela === "ESCURO" ? 'tema-escuro' : 'tema-claro';
             const temaAntigo = configAtual.modoTela === "ESCURO" ? 'tema-claro' : 'tema-escuro';
             if (!DOM.corpoPagina.classList.contains(temaNovo)) {
@@ -160,7 +177,6 @@
                 DOM.corpoPagina.classList.add(temaNovo);
             }
 
-            // Rodapé
             if (configAtual.mensagemRodape && configAtual.mensagemRodape.trim() !== "") {
                 if (DOM.textoRodape.innerText !== configAtual.mensagemRodape) {
                     DOM.textoRodape.innerText = configAtual.mensagemRodape;
@@ -209,16 +225,26 @@
             if (hoje === 0) hoje = 1; 
             let nomeDia = diasDaSemana[hoje];
             
-            // Modo Teste
             if (configAtual.modoTeste && configAtual.modoTeste !== "DESLIGADO") {
                 nomeDia = configAtual.modoTeste.toUpperCase(); 
-                DOM.statusSync.innerHTML = `<span style="color: #F59E0B; font-weight: 800;">⚠️ MODO TESTE (${nomeDia})</span>`;
+                DOM.statusSync.innerHTML = `<span style="color: #F59E0B; font-weight: 800;">⚠️ TESTE (${nomeDia})</span>`;
                 DOM.dotSync.style.backgroundColor = "#F59E0B"; 
                 DOM.dotSync.style.boxShadow = "0 0 8px #F59E0B";
             } else {
-                DOM.statusSync.innerHTML = "Sincronizado ao vivo";
+                DOM.statusSync.innerHTML = "Ao vivo";
                 DOM.dotSync.style.backgroundColor = "#10B981"; 
                 DOM.dotSync.style.boxShadow = "0 0 8px #10B981";
+            }
+
+            // --- LÓGICA VISUAL DO BOTÃO DE MODO ---
+            if (modoListaCompleta) {
+                DOM.btnModo.innerHTML = "📺 Modo TV";
+                DOM.btnModo.classList.replace("bg-white/20", "bg-blue-600");
+                DOM.containerTabela.classList.replace("overflow-hidden", "overflow-y-auto");
+            } else {
+                DOM.btnModo.innerHTML = "📋 Lista Completa";
+                DOM.btnModo.classList.replace("bg-blue-600", "bg-white/20");
+                DOM.containerTabela.classList.replace("overflow-y-auto", "overflow-hidden");
             }
 
             const aulasBrutas = dadosCompletos[nomeDia] || [];
@@ -232,9 +258,11 @@
                 return;
             }
 
-            const limitesPorTela = parseInt(configAtual.turmasPorTela) || 6;
+            // Se for "Modo Lista", ignora o limite da TV e mostra tudo (limite = total de aulas)
+            const limitesPorTela = modoListaCompleta ? aulas.length : (parseInt(configAtual.turmasPorTela) || 6);
             const tempoTelaMs = (parseInt(configAtual.tempoPorTela) || 5) * 1000;
-            totalPaginas = Math.ceil(aulas.length / limitesPorTela);
+            
+            totalPaginas = Math.ceil(aulas.length / limitesPorTela) || 1;
             
             if (paginaAtual > totalPaginas) paginaAtual = 1;
 
@@ -244,9 +272,8 @@
             const indiceInicio = (paginaAtual - 1) * limitesPorTela;
             const aulasDaPagina = aulas.slice(indiceInicio, indiceInicio + limitesPorTela);
 
-            // Virtual DOM: Só desenha na tela se o código HTML gerado for diferente do atual
             const novoHtmlCorpo = aulasDaPagina.map((aula, index) => `
-                <tr class="border-b border-gray-400 linha-aula ${index % 2 === 0 ? 'linha-impar' : 'bg-transparent'}" style="animation-delay: ${index * 0.05}s;">
+                <tr class="border-b border-gray-400 linha-aula ${index % 2 === 0 ? 'linha-impar' : 'bg-transparent'}" style="animation-delay: ${index * 0.02}s;">
                     <td class="p-4 pl-6 font-bold">${aula.escola}</td>
                     <td class="p-4"><span class="font-bold text-senai">${aula.curso}</span> <span class="text-sm bg-gray-300 text-gray-800 px-2 py-1 rounded ml-2 font-bold">${aula.serie}</span></td>
                     <td class="p-4 font-medium uppercase text-sm">${aula.instrutor}</td>
@@ -256,14 +283,12 @@
                     <td class="p-4 text-center font-bold text-red-500 pr-6">${aula.saida}</td>
                 </tr>`).join('');
 
-            // Otimização: A tela só pisca se a informação realmente mudou
             if (DOM.tabelaCorpo.innerHTML !== novoHtmlCorpo) {
                 DOM.tabelaCorpo.innerHTML = novoHtmlCorpo;
             }
 
-            // Renderiza bolinhas
             let novoHtmlPaginacao = "";
-            if (totalPaginas > 1) {
+            if (totalPaginas > 1 && !modoListaCompleta) {
                 for (let i = 1; i <= totalPaginas; i++) {
                     novoHtmlPaginacao += `<div class="dot ${i === paginaAtual ? 'active' : ''}"></div>`;
                 }
@@ -273,7 +298,8 @@
             }
 
             clearTimeout(timerPaginacao);
-            if (totalPaginas > 1) {
+            // Só ativa a rotação se tiver mais de 1 página e NÃO estiver no Modo Lista Completa
+            if (totalPaginas > 1 && !modoListaCompleta) {
                 timerPaginacao = setTimeout(() => {
                     paginaAtual = paginaAtual >= totalPaginas ? 1 : paginaAtual + 1;
                     renderizarTabela();
@@ -281,13 +307,12 @@
             }
         }
 
-        // Inicialização
         setInterval(atualizarRelogio, 1000);
         atualizarRelogio();
 
         if (API_URL.startsWith("http")) {
             buscarDados();
-            setInterval(buscarDados, 60000); // Consulta silenciosa a cada 60s
+            setInterval(buscarDados, 60000);
         }
     </script>
 </body>
