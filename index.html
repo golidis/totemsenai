@@ -13,6 +13,8 @@
         .tema-claro .linha-impar { background-color: #f9fafb; }
         .tema-claro .texto-secundario { color: #4b5563; }
         .tema-claro .border-header { border-bottom: 4px solid #E3000F; }
+        .tema-claro .bg-modal { background-color: #f3f4f6; color: #1f2937; }
+        .tema-claro .input-busca { background-color: #ffffff; color: #1f2937; border-color: #d1d5db; }
 
         /* Tema Escuro */
         .tema-escuro .text-senai { color: #60A5FA; }
@@ -22,6 +24,8 @@
         .tema-escuro .texto-secundario { color: #d1d5db; }
         .tema-escuro .border-header { border-bottom: 4px solid #f87171; }
         .tema-escuro .bg-gray-800 { background-color: #0f172a; }
+        .tema-escuro .bg-modal { background-color: #111827; color: #f3f4f6; }
+        .tema-escuro .input-busca { background-color: #1f2937; color: #f3f4f6; border-color: #4b5563; }
 
         .bg-senai { background-color: #005CAA; }
         .text-senai { color: #005CAA; }
@@ -50,7 +54,7 @@
         .rodape-texto { display: inline-block; padding-left: 100%; animation: letreiro 25s linear infinite; }
         @keyframes letreiro { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-        /* Estilo dinâmico para barra de rolagem no PC/Mobile */
+        /* Barra de rolagem */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -61,10 +65,13 @@
     <header class="bg-senai text-white p-6 flex justify-between items-center shadow-lg z-10 shrink-0">
         <div class="flex items-center gap-6">
             <img src="SESISENAI.png" alt="Logo SESI SENAI" class="h-14 object-contain">
-            <div class="text-2xl font-light border-l-2 pl-6 border-white flex items-center gap-6">
-                Rio Verde
+            <div class="text-2xl font-light border-l-2 pl-6 border-white flex items-center gap-4">
+                <span>Rio Verde</span>
                 <button id="btn-modo" onclick="alternarModo()" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-bold transition flex items-center gap-2 cursor-pointer border border-white/40">
                     📋 Lista Completa
+                </button>
+                <button id="btn-semana" onclick="abrirPainelSemanal()" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-bold transition flex items-center gap-2 cursor-pointer border border-white/40">
+                    📅 Grade Semanal
                 </button>
             </div>
         </div>
@@ -105,10 +112,56 @@
         <div id="rodape-texto" class="rodape-texto"></div>
     </div>
 
+    <!-- MODAL DA GRADE SEMANAL -->
+    <div id="modal-semanal" class="fixed inset-0 z-50 hidden flex-col bg-modal">
+        <div class="bg-senai text-white p-5 flex justify-between items-center shadow-lg shrink-0">
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-bold">📅 Grade Completa da Semana</span>
+                <span class="text-sm bg-white/20 px-3 py-1 rounded-full">Todos os turnos</span>
+            </div>
+            <button onclick="fecharPainelSemanal()" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition cursor-pointer">
+                ✕ Fechar
+            </button>
+        </div>
+
+        <div class="p-6 flex flex-col flex-1 min-h-0 gap-4">
+            <!-- Barra de Abas dos Dias + Busca -->
+            <div class="flex flex-wrap justify-between items-center gap-4 shrink-0">
+                <div id="abas-dias" class="flex flex-wrap gap-2"></div>
+                <input 
+                    type="text" 
+                    id="busca-semanal" 
+                    oninput="renderizarPainelSemanal()" 
+                    placeholder="🔍 Buscar instrutor, curso, sala..." 
+                    class="input-busca px-4 py-2 rounded-lg border-2 w-80 text-base focus:outline-none focus:border-blue-500"
+                >
+            </div>
+
+            <!-- Tabela Semanal -->
+            <div class="bg-tabela rounded-xl shadow-xl flex-1 overflow-y-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="sticky top-0 z-10 shadow-md">
+                        <tr class="bg-gray-800 text-white text-lg uppercase tracking-wider">
+                            <th class="p-3 pl-5 w-1/5">Escola/Evento</th>
+                            <th class="p-3 w-1/4">Curso (Série)</th>
+                            <th class="p-3 w-1/6">Instrutor(a)</th>
+                            <th class="p-3 w-1/6">Ambiente</th>
+                            <th class="p-3 text-center w-24">Início</th>
+                            <th class="p-3 text-center w-24">Lanche</th>
+                            <th class="p-3 text-center w-24 pr-5">Saída</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-semanal-corpo" class="text-lg"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzfUN_NmAWrHoFnRb_ooqXflq5hi7YIZgO1u00zl_bJviDwzfwlSrXo-P8vEwne3JggLQ/exec"; 
 
         const diasDaSemana = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
+        const diasUteis = ["SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
         
         const DOM = {
             corpoPagina: document.getElementById('corpo-pagina'),
@@ -122,7 +175,11 @@
             paginacao: document.getElementById('paginacao'),
             areaRodape: document.getElementById('rodape-area'),
             textoRodape: document.getElementById('rodape-texto'),
-            btnModo: document.getElementById('btn-modo')
+            btnModo: document.getElementById('btn-modo'),
+            modalSemanal: document.getElementById('modal-semanal'),
+            abasDias: document.getElementById('abas-dias'),
+            buscaSemanal: document.getElementById('busca-semanal'),
+            tabelaSemanalCorpo: document.getElementById('tabela-semanal-corpo')
         };
 
         let dadosCompletos = {};
@@ -130,9 +187,11 @@
         let paginaAtual = 1;
         let totalPaginas = 1;
         let timerPaginacao;
+        let diaSelecionadoSemanal = diasDaSemana[new Date().getDay() === 0 ? 1 : new Date().getDay()];
         
-        // Verifica se o link foi acessado com "?lista" no final
-        let modoListaCompleta = new URLSearchParams(window.location.search).has('lista');
+        const paramsUrl = new URLSearchParams(window.location.search);
+        let modoListaCompleta = paramsUrl.has('lista');
+        let abrirSemanaAoCarregar = paramsUrl.has('semana');
 
         function atualizarRelogio() {
             const agora = new Date();
@@ -146,6 +205,69 @@
             renderizarTabela();
         }
 
+        // --- FUNÇÕES DO PAINEL SEMANAL ---
+        function abrirPainelSemanal() {
+            DOM.modalSemanal.classList.remove('hidden');
+            DOM.modalSemanal.classList.add('flex');
+            renderizarAbasDias();
+            renderizarPainelSemanal();
+        }
+
+        function fecharPainelSemanal() {
+            DOM.modalSemanal.classList.add('hidden');
+            DOM.modalSemanal.classList.remove('flex');
+        }
+
+        function selecionarDiaSemanal(dia) {
+            diaSelecionadoSemanal = dia;
+            renderizarAbasDias();
+            renderizarPainelSemanal();
+        }
+
+        function renderizarAbasDias() {
+            const diaHoje = diasDaSemana[new Date().getDay()];
+            DOM.abasDias.innerHTML = diasUteis.map(dia => {
+                const ativo = dia === diaSelecionadoSemanal;
+                const ehHoje = dia === diaHoje ? " (Hoje)" : "";
+                const estilo = ativo 
+                    ? "bg-senai text-white shadow-md scale-105" 
+                    : "bg-gray-300 text-gray-800 hover:bg-gray-400";
+                return `<button onclick="selecionarDiaSemanal('${dia}')" class="px-4 py-2 rounded-lg font-bold text-sm transition cursor-pointer ${estilo}">${dia}${ehHoje}</button>`;
+            }).join('');
+        }
+
+        function renderizarPainelSemanal() {
+            const termo = DOM.buscaSemanal.value.trim().toLowerCase();
+            let aulas = dadosCompletos[diaSelecionadoSemanal] || [];
+
+            if (termo !== "") {
+                aulas = aulas.filter(aula => 
+                    (aula.escola || "").toLowerCase().includes(termo) ||
+                    (aula.curso || "").toLowerCase().includes(termo) ||
+                    (aula.serie || "").toLowerCase().includes(termo) ||
+                    (aula.instrutor || "").toLowerCase().includes(termo) ||
+                    (aula.ambiente || "").toLowerCase().includes(termo)
+                );
+            }
+
+            if (aulas.length === 0) {
+                DOM.tabelaSemanalCorpo.innerHTML = `<tr><td colspan="7" class="p-8 text-center texto-secundario text-xl font-medium">Nenhuma aula encontrada para ${diaSelecionadoSemanal}.</td></tr>`;
+                return;
+            }
+
+            DOM.tabelaSemanalCorpo.innerHTML = aulas.map((aula, index) => `
+                <tr class="border-b border-gray-400 ${index % 2 === 0 ? 'linha-impar' : 'bg-transparent'}">
+                    <td class="p-3 pl-5 font-bold">${aula.escola}</td>
+                    <td class="p-3"><span class="font-bold text-senai">${aula.curso}</span> <span class="text-xs bg-gray-300 text-gray-800 px-2 py-1 rounded ml-2 font-bold">${aula.serie}</span></td>
+                    <td class="p-3 font-medium uppercase text-sm">${aula.instrutor}</td>
+                    <td class="p-3 font-medium texto-secundario text-sm">${aula.ambiente}</td>
+                    <td class="p-3 text-center font-bold text-blue-500">${aula.inicio}</td>
+                    <td class="p-3 text-center font-bold text-green-500">${aula.lanche}</td>
+                    <td class="p-3 text-center font-bold text-red-500 pr-5">${aula.saida}</td>
+                </tr>`).join('');
+        }
+
+        // --- SINCRONIZAÇÃO E RENDERIZAÇÃO PRINCIPAL ---
         async function buscarDados() {
             if(!API_URL.startsWith("http")) return;
             try {
@@ -164,6 +286,13 @@
 
                 aplicarConfiguracoes();
                 renderizarTabela();
+
+                if (abrirSemanaAoCarregar) {
+                    abrirSemanaAoCarregar = false;
+                    abrirPainelSemanal();
+                } else if (!DOM.modalSemanal.classList.contains('hidden')) {
+                    renderizarPainelSemanal();
+                }
             } catch (erro) {
                 console.error("Erro na sincronização:", erro);
             }
@@ -236,7 +365,6 @@
                 DOM.dotSync.style.boxShadow = "0 0 8px #10B981";
             }
 
-            // --- LÓGICA VISUAL DO BOTÃO DE MODO ---
             if (modoListaCompleta) {
                 DOM.btnModo.innerHTML = "📺 Modo TV";
                 DOM.btnModo.classList.replace("bg-white/20", "bg-blue-600");
@@ -258,12 +386,10 @@
                 return;
             }
 
-            // Se for "Modo Lista", ignora o limite da TV e mostra tudo (limite = total de aulas)
             const limitesPorTela = modoListaCompleta ? aulas.length : (parseInt(configAtual.turmasPorTela) || 6);
             const tempoTelaMs = (parseInt(configAtual.tempoPorTela) || 5) * 1000;
             
             totalPaginas = Math.ceil(aulas.length / limitesPorTela) || 1;
-            
             if (paginaAtual > totalPaginas) paginaAtual = 1;
 
             DOM.tituloDia.innerText = totalPaginas > 1 ? 
@@ -298,7 +424,6 @@
             }
 
             clearTimeout(timerPaginacao);
-            // Só ativa a rotação se tiver mais de 1 página e NÃO estiver no Modo Lista Completa
             if (totalPaginas > 1 && !modoListaCompleta) {
                 timerPaginacao = setTimeout(() => {
                     paginaAtual = paginaAtual >= totalPaginas ? 1 : paginaAtual + 1;
